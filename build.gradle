@@ -1,0 +1,108 @@
+plugins {
+    id 'org.springframework.boot' version '2.2.2.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+    id 'java'
+    id 'maven-publish'
+    id 'idea'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    maven {
+        url 'http://maven.aliyun.com/nexus/content/groups/public/'
+    }
+    jcenter()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
+}
+
+test {
+    useJUnitPlatform()
+}
+
+def env = project.hasProperty("env") ? project.property("env") : "dev"
+processResources {
+    filter org.apache.tools.ant.filters.ReplaceTokens, tokens: [env: env]
+    include "**/*.xml"
+    include "application.yml"
+    include "application-" + env + ".yml"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    withJavadocJar()
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        hszhaox(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            from components.java
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+            pom {
+                name = 'spring-cloud'
+                description = 'A demo of learning SpringCloud'
+                url = 'https://github.com/hszhaox/spring-cloud'
+                properties = [
+                        "project.build.sourceEncoding"    : "UTF-8",
+                        "project.reporting.outputEncoding": "UTF-8",
+                        "java.encoding"                   : "UTF-8",
+                        "java.version"                    : "8"
+                ]
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'hszhaox'
+                        name = 'hszhaox'
+                        email = 'hszhaox@163.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com:hszhaox/spring-cloud.git'
+                    developerConnection = 'scm:git:ssh://github.com:hszhaox/spring-cloud.git'
+                    url = 'https://github.com/hszhaox/spring-cloud'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'nexus'
+            def snapshotsRepoUrl = 'http://10.5.1.4:7082/nexus/content/repositories/snapshots/'
+            def releasesRepoUrl = 'http://10.5.1.4:7082/nexus/content/repositories/releases/'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username 'admin'
+                password 'admin123'
+            }
+        }
+    }
+}
